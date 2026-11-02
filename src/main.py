@@ -13,8 +13,8 @@ content_queue: list[str] = []
 async def home():
   return "Hello, Brunch OTN Server"
 
-@app.post("/feed")
-async def feed_message(request: Request):
+@app.post("/message")
+async def send_message(request: Request):
   content_bytes = await request.body()
   content = content_bytes.decode()
   key = hex(randint(1 << 63, 1 << 64))[2:]
