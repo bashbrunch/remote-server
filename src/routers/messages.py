@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Response
 
-from src.core.session import get_session
+from src.models.session import Session
 
 _router = APIRouter(tags=["messages"])
 
@@ -12,13 +12,8 @@ _post = _router.post
 _delete = _router.delete
 
 @_post("")
-async def send_message(session_id: str, request: Request):
-  session_key = request.headers.get("Authorization", "")
-  session = get_session(session_id, session_key)
-
-  if not session:
-    return Response("access denied", 403)
-
+async def send_message(request: Request):
+  session: Session = request.state.session
   content_bytes = await request.body()
   content = content_bytes.decode()
 
@@ -30,13 +25,8 @@ async def send_message(session_id: str, request: Request):
   return Response("ok", 200)
 
 @_get("")
-async def get_message(session_id: str, request: Request):
-  session_key = request.headers.get("Authorization", "")
-  session = get_session(session_id, session_key)
-
-  if not session:
-    return Response("access denied", 403)
-
+async def get_message(request: Request):
+  session: Session = request.state.session
   message = session.seek_message()
 
   if not message:
@@ -45,13 +35,8 @@ async def get_message(session_id: str, request: Request):
   return Response(message, 200)
 
 @_delete("")
-async def pop_message(session_id: str, key: str, request: Request):
-  session_key = request.headers.get("Authorization", "")
-  session = get_session(session_id, session_key)
-
-  if not session:
-    return Response("access denied", 403)
-
+async def pop_message(key: str, request: Request):
+  session: Session = request.state.session
   exists, polled = session.poll_message(key)
 
   if not exists:
