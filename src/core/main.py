@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from src.core.cors import cors_middleware
+from src.middlewares.cors import cors_middleware
 from src.routers.index import IndexRouter
 
 app = FastAPI(
