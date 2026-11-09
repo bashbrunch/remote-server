@@ -51,7 +51,7 @@ content`.
 
 ### Execution
 ```bash
-python src/main.py
+uvicorn src.core.main:app
 ```
 The server will be available at `http://0.0.0.0:8000`.
 

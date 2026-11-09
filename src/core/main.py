@@ -1,44 +1,17 @@
-from random import randint
-
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import StreamingResponse
 
-from src.cors import cors_middleware
+from src.core.cors import cors_middleware
 
-def generate_key() -> str:
-  return hex(randint(1 << 63, 1 << 64))[2:]
+from src.core.session import (
+  get_session,
+  create_session,
+  is_available_session,
+  delete_session,
+)
 
 app = FastAPI()
 app.middleware("https")(cors_middleware)
-
-class Message:
-  key: str
-  content: str
-
-  def __init__(self, content: str):
-    self.key = generate_key()
-    self.content = content
-
-class Session:
-  key: str | None = None
-  buffer: list[Message] = []
-  logs: list[str] = []
-
-sessions: dict[str, Session] = {}
-
-def get_session(
-  session_id: str,
-  session_key: str,
-) -> Session | None:
-  if session_id not in sessions:
-    return None
-
-  session = sessions[session_id]
-
-  if session.key and session.key != session_key:
-    return None
-
-  return session
 
 @app.get("/")
 async def home():
@@ -47,19 +20,14 @@ async def home():
 @app.post("/{session_id}")
 async def start_session(session_id: str, request: Request):
   session_key = request.headers.get("Authorization", "")
-  session = get_session(session_id, session_key)
+  available = is_available_session(session_id, session_key)
 
-  if not session and session_id in sessions:
+  if not available:
     return Response("access denied", 403)
-  
+
   content_bytes = await request.body()
   new_session_key = content_bytes.decode()
-
-  sessions[session_id] = Session()
-  sessions[session_id].key = new_session_key
-
-  if not new_session_key:
-    sessions[session_id].key = None
+  create_session(session_id, new_session_key)
 
   return Response("ok", 200)
 
@@ -74,14 +42,14 @@ async def check_session(session_id: str, request: Request):
   return Response("ok", 200)
 
 @app.delete("/{session_id}")
-async def delete_session(session_id: str, request: Request):
+async def close_session(session_id: str, request: Request):
   session_key = request.headers.get("Authorization", "")
   session = get_session(session_id, session_key)
 
   if not session:
     return Response("access denied", 403)
 
-  del sessions[session_id]
+  delete_session(session_id, session_key)
 
   return Response("ok", 200)
 
@@ -98,7 +66,7 @@ async def send_logs(
 
   content_bytes = await request.body()
   content = content_bytes.decode()
-  session.logs.append(f"{content}\n")
+  session.push_log(content)
 
   return Response("ok", 200)
 
@@ -110,18 +78,8 @@ async def get_logs(session_id: str, request: Request):
   if not session:
     return Response("access denied", 403)
 
-  if not session.logs:
-    return Response("missing", 404)
-
-  def log_stream():
-    line = len(session.logs) - 1
-
-    while line >= 0:
-      yield session.logs[line] + "\n"
-      line -= 1
-
   return StreamingResponse(
-    log_stream(),
+    session.stream_logs(),
     media_type="text/plain",
   )
 
@@ -139,7 +97,7 @@ async def send_message(session_id: str, request: Request):
   if not content:
     return Response("body required", 400)
 
-  session.buffer.append(Message(content))
+  session.push_message(content)
 
   return Response("ok", 200)
 
@@ -151,14 +109,12 @@ async def get_message(session_id: str, request: Request):
   if not session:
     return Response("access denied", 403)
 
-  if not session.buffer:
+  message = session.seek_message()
+
+  if not message:
     return Response("missing", 404)
 
-  message = session.buffer[0]
-  key = message.key
-  content = message.content
-
-  return Response(f"{key}\n{content}", 200)
+  return Response(message, 200)
 
 @app.delete("/{session_id}/message/{key}")
 async def pop_message(session_id: str, key: str, request: Request):
@@ -168,13 +124,13 @@ async def pop_message(session_id: str, key: str, request: Request):
   if not session:
     return Response("access denied", 403)
 
-  if not session.buffer:
+  exists, polled = session.poll_message(key)
+
+  if not exists:
     return Response("missing", 404)
 
-  if key != session.buffer[0].key:
+  if not polled:
     return Response("key mismatch", 400)
-
-  session.buffer.pop(0)
 
   return Response("ok", 200)
 
