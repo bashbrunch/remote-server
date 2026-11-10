@@ -1,17 +1,16 @@
+from src.core.cache import Cache
 from src.models.session import Session
-
-sessions: dict[str, Session] = {}
 
 def get_session(
   session_id: str,
   session_key: str,
 ) -> Session | None:
-  if session_id not in sessions:
+  if not Cache.get(session_id):
     return None
 
-  session = sessions[session_id]
+  session = Session(session_id)
 
-  if session.key and session.key != session_key:
+  if not session.auth_check(session_key):
     return None
 
   return session
@@ -20,25 +19,20 @@ def is_available_session(
   session_id: str,
   session_key: str,
 ) -> bool:
-  if session_id not in sessions:
+  if not Cache.get(session_id):
     return True
 
-  session = sessions[session_id]
-
-  if session.key:
-    return session.key == session_key
-
-  return True
+  return Session(session_id).auth_check(session_key)
 
 def create_session(
   session_id: str,
   session_key: str,
 ) -> Session:
-  session = Session()
-  sessions[session_id] = session
+  session = Session(session_id)
+  Cache.set(session_id, "1")
 
   if session_key:
-    session.key = None
+    session.auth_set(session_key)
 
   return session
 
@@ -46,15 +40,16 @@ def delete_session(
   session_id: str,
   session_key: str,
 ) -> bool:
-  if session_id not in sessions:
+  if not Cache.get(session_id):
     return False
 
-  session = sessions[session_id]
+  session = Session(session_id)
 
-  if session.key and session.key != session_key:
+  if not session.auth_check(session_key):
     return False
 
-  del sessions[session_id]
+  session.destroy()
+  Cache.delete(session_id)
 
   return True
 

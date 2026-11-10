@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import StreamingResponse
 
+from src.models.session import Session
+
 _router = APIRouter(tags=["logs"])
 
 class LogsRouter:
@@ -11,7 +13,7 @@ _post = _router.post
 
 @_post("")
 async def send_logs(request: Request):
-  session = request.state.session
+  session: Session = request.state.session
   content_bytes = await request.body()
   content = content_bytes.decode()
   session.push_log(content)
@@ -20,7 +22,7 @@ async def send_logs(request: Request):
 
 @_get("")
 async def get_logs(request: Request):
-  session = request.state.session
+  session: Session = request.state.session
 
   return StreamingResponse(
     session.stream_logs(),

@@ -34,7 +34,7 @@ async def get_message(request: Request):
 
   return Response(message, 200)
 
-@_delete("")
+@_delete("/{key}")
 async def pop_message(key: str, request: Request):
   session: Session = request.state.session
   exists, polled = session.poll_message(key)
