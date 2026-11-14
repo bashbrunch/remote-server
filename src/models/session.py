@@ -72,6 +72,8 @@ class Session:
     if splits[0] != key:
       return True, False
 
+    Cache.delete(f"{self.id}::{key}")
+
     if len(splits) > 1:
       Cache.set(f"{self.id}:buffer", splits[1])
     else:
@@ -84,6 +86,7 @@ class Session:
     keys = _buffer.split("\n") if _buffer else []
 
     for key in keys:
+      if not key: continue
       Cache.delete(f"{self.id}::{key}")
 
     idx = 0

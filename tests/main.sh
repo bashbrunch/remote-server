@@ -29,5 +29,11 @@ expect "DELETE" "/messages/${key}" "" "" "key mismatch"
 
 expect "GET" "/messages" "" "" "[^\n]*\nhi 2"
 
+expect "POST" "/logs" "" "log 1" "ok"
+expect "GET" "/logs" "" "" "log 1"
+
+expect "POST" "/logs" "" "log 2" "ok"
+expect "GET" "/logs" "" "" "log 1\nlog 2"
+
 expect "DELETE" "/sessions" "" "" "ok"
 
