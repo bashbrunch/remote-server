@@ -24,19 +24,19 @@ The server manages multiple concurrent sessions. Each session is secured via an 
 All requests (except the home root) require an `Authorization` header to authenticate the session.
 
 ### Session Control
-- `POST /{session_id}`: Starts a new session or verifies an existing one.
-- `GET /{session_id}`: Checks if a session is active and authorized.
-- `DELETE /{session_id}`: Terminates the session.
+- `POST /{session_id}/sessions`: Starts a new session or verifies an existing one.
+- `GET /{session_id}/sessions`: Checks if a session is active and authorized.
+- `DELETE /{session_id}/sessions`: Terminates the session.
 
 ### Log Management
 - `POST /{session_id}/logs`: Appends raw text to the session log.
 - `GET /{session_id}/logs`: Returns logs as a `StreamingResponse` in reverse chronological order (newest first).
 
 ### Messaging System
-- `POST /{session_id}/message`: Adds a message to the session buffer. The server generates a unique random key for this message.
-- `GET /{session_id}/message`: Retrieves the oldest message in the buffer. Returns the format: `key
+- `POST /{session_id}/messages`: Adds a message to the session buffer. The server generates a unique random key for this message.
+- `GET /{session_id}/messages`: Retrieves the oldest message in the buffer. Returns the format: `key
 content`.
-- `DELETE /{session_id}/message/{key}`: Removes a specific message from the buffer if the key matches the oldest message.
+- `DELETE /{session_id}/messages/{key}`: Removes a specific message from the buffer if the key matches the oldest message.
 
 ## Setup
 
@@ -59,7 +59,7 @@ The server will be available at `http://0.0.0.0:8000`.
 
 **1. Start a Session**
 ```bash
-curl -X POST http://localhost:8000/my-session-123 \
+curl -X POST http://localhost:8000/my-session-123/sessions \
    -d "my-secret-key"
 ```
 
@@ -72,13 +72,13 @@ curl -X POST http://localhost:8000/my-session-123/logs \
 
 **3. Send a Message**
 ```bash
-curl -X POST http://localhost:8000/my-session-123/message \
+curl -X POST http://localhost:8000/my-session-123/messages \
      -H "Authorization: my-secret-key" \
      -d "Hello from the user!"
 ```
 
 **4. Retrieve the Message**
 ```bash
-curl -X GET http://localhost:8000/my-session-123/message \
+curl -X GET http://localhost:8000/my-session-123/messages \
      -H "Authorization: my-secret-key"
 ```
