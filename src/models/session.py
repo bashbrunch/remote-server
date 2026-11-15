@@ -39,27 +39,27 @@ class Session:
 
       yield data
 
-  def push_message(self, content: str):
+  def push(self, label: str, content: str):
     msg_id = generate_key()
-    Cache.set(f"{self.id}::{msg_id}", content)
-    _buffer = Cache.get(f"{self.id}:buffer", "")
+    Cache.set(f"{self.id}:{label}:{msg_id}", content)
+    _buffer = Cache.get(f"{self.id}:{label}:buffer", "")
     _buffer += f"{msg_id}\n"
-    Cache.set(f"{self.id}:buffer", _buffer)
+    Cache.set(f"{self.id}:{label}:buffer", _buffer)
 
-  def seek_message(self) -> str | None:
-    _buffer = Cache.get(f"{self.id}:buffer")
+  def seek(self, label: str) -> str | None:
+    _buffer = Cache.get(f"{self.id}:{label}:buffer")
     splits = _buffer.split("\n", 1)
 
     if not splits or not splits[0]:
       return None
 
     key = splits[0]
-    message = Cache.get(f"{self.id}::{key}")
+    message = Cache.get(f"{self.id}:{label}:{key}")
 
     return f"{key}\n{message}"
 
-  def poll_message(self, key: str) -> tuple[bool, bool]:
-    _buffer = Cache.get(f"{self.id}:buffer")
+  def poll(self, label: str, key: str) -> tuple[bool, bool]:
+    _buffer = Cache.get(f"{self.id}:{label}:buffer")
 
     if not _buffer:
       return False, False
@@ -72,23 +72,28 @@ class Session:
     if splits[0] != key:
       return True, False
 
-    Cache.delete(f"{self.id}::{key}")
+    Cache.delete(f"{self.id}:{label}:{key}")
 
     if len(splits) > 1:
-      Cache.set(f"{self.id}:buffer", splits[1])
+      Cache.set(f"{self.id}:{label}:buffer", splits[1])
     else:
-      Cache.delete(f"{self.id}:buffer")
+      Cache.delete(f"{self.id}:{label}:buffer")
 
     return True, True
 
-  def destroy(self):
-    _buffer = Cache.get(f"{self.id}:buffer")
+  def clear(self, label: str):
+    _buffer = Cache.get(f"{self.id}:{label}:buffer")
     keys = _buffer.split("\n") if _buffer else []
 
     for key in keys:
       if not key: continue
-      Cache.delete(f"{self.id}::{key}")
+      Cache.delete(f"{self.id}:{label}:{key}")
 
+    Cache.delete(f"{self.id}:{label}:buffer")
+
+  def destroy(self):
+    self.clear("messages")
+    self.clear("proxies")
     idx = 0
 
     while Cache.get(f"{self.id}:{idx}"):
@@ -97,5 +102,4 @@ class Session:
 
     Cache.delete(f"{self.id}:idx")
     Cache.delete(f"{self.id}:key")
-    Cache.delete(f"{self.id}:buffer")
 

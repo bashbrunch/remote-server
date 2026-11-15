@@ -20,14 +20,14 @@ async def send_message(request: Request):
   if not content:
     return Response("body required", 400)
 
-  session.push_message(content)
+  session.push("messages", content)
 
   return Response("ok", 200)
 
 @_get("")
 async def get_message(request: Request):
   session: Session = request.state.session
-  message = session.seek_message()
+  message = session.seek("messages")
 
   if not message:
     return Response("missing", 404)
@@ -37,7 +37,7 @@ async def get_message(request: Request):
 @_delete("/{key}")
 async def pop_message(key: str, request: Request):
   session: Session = request.state.session
-  exists, polled = session.poll_message(key)
+  exists, polled = session.poll("messages", key)
 
   if not exists:
     return Response("missing", 404)

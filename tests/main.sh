@@ -29,6 +29,20 @@ expect "DELETE" "/messages/${key}" "" "" "key mismatch"
 
 expect "GET" "/messages" "" "" "[^\n]*\nhi 2"
 
+expect "POST" "/proxies" "" "hi 1" "ok"
+expect "POST" "/proxies" "" "hi 2" "ok"
+expect "POST" "/proxies" "" "hi 3" "ok"
+
+expect "GET" "/proxies" "" "" "[^\n]*\nhi 1"
+expect "GET" "/proxies" "" "" "[^\n]*\nhi 1"
+
+key=$(curl -s "${URL}/${SID}/proxies" | head -n 1)
+
+expect "DELETE" "/proxies/${key}" "" "" "ok"
+expect "DELETE" "/proxies/${key}" "" "" "key mismatch"
+
+expect "GET" "/proxies" "" "" "[^\n]*\nhi 2"
+
 expect "POST" "/logs" "" "log 1" "ok"
 expect "GET" "/logs" "" "" "log 1"
 

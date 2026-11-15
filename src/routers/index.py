@@ -4,6 +4,7 @@ from fastapi.security import APIKeyHeader
 from src.core.session import get_session
 from src.routers.logs import LogsRouter
 from src.routers.messages import MessagesRouter
+from src.routers.proxies import ProxiesRouter
 from src.routers.sessions import SessionsRouter
 
 security = APIKeyHeader(
@@ -45,6 +46,12 @@ _router.include_router(
 _router.include_router(
   LogsRouter.router,
   prefix="/logs",
+  dependencies=[Depends(authenticate_session)]
+)
+
+_router.include_router(
+  ProxiesRouter.router,
+  prefix="/proxies",
   dependencies=[Depends(authenticate_session)]
 )
 
