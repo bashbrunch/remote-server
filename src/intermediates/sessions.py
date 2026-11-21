@@ -13,7 +13,7 @@ async def session_authenticate(
   request: Request,
   session_key: str = Depends(security),
 ):
-  session = get_session(session_id, session_key)
+  session = await get_session(session_id, session_key)
 
   if not session:
     raise HTTPException(

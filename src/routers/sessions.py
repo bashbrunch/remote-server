@@ -19,21 +19,21 @@ _delete = _router.delete
 @_post("")
 async def start_session(session_id: str, request: Request):
   session_key = request.headers.get("Authorization", "")
-  available = is_available_session(session_id, session_key)
+  available = await is_available_session(session_id, session_key)
 
   if not available:
     return Response("access denied", 403)
 
   content_bytes = await request.body()
   new_session_key = content_bytes.decode()
-  create_session(session_id, new_session_key)
+  await create_session(session_id, new_session_key)
 
   return Response("ok", 200)
 
 @_get("")
 async def check_session(session_id: str, request: Request):
   session_key = request.headers.get("Authorization", "")
-  session = get_session(session_id, session_key)
+  session = await get_session(session_id, session_key)
 
   if not session:
     return Response("access denied", 403)
@@ -43,12 +43,12 @@ async def check_session(session_id: str, request: Request):
 @_delete("")
 async def close_session(session_id: str, request: Request):
   session_key = request.headers.get("Authorization", "")
-  session = get_session(session_id, session_key)
+  session = await get_session(session_id, session_key)
 
   if not session:
     return Response("access denied", 403)
 
-  delete_session(session_id, session_key)
+  await delete_session(session_id, session_key)
 
   return Response("ok", 200)
 

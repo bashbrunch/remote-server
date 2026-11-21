@@ -16,7 +16,7 @@ async def send_logs(request: Request):
   session: Session = request.state.session
   content_bytes = await request.body()
   content = content_bytes.decode()
-  session.push_log(content)
+  await session.push_log(content)
 
   return Response("ok", 200)
 

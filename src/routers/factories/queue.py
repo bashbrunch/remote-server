@@ -15,13 +15,13 @@ class QueueRouterFactory:
       if not content:
         return Response("body required", 400)
 
-      session.queue_push(label, content)
+      await session.queue_push(label, content)
 
       return Response("ok", 200)
 
     async def seek(request: Request):
       session: Session = request.state.session
-      seeked = session.queue_seek(label)
+      seeked = await session.queue_seek(label)
 
       if not seeked:
         return Response("missing", 404)
@@ -30,7 +30,7 @@ class QueueRouterFactory:
 
     async def poll(key: str, request: Request):
       session: Session = request.state.session
-      exists, polled = session.queue_poll(label, key)
+      exists, polled = await session.queue_poll(label, key)
 
       if not exists:
         return Response("missing", 404)
