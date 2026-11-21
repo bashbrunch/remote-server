@@ -1,53 +1,20 @@
 TESTS=$(dirname "$0")
-source "$TESTS/setup.sh"
 
-expect "POST" "_1/sessions" "" "" "ok"
-expect "POST" "_2/sessions" "" "pwd" "ok"
-expect "POST" "_2/sessions" "" "pwd" "access denied"
-expect "POST" "_2/sessions" "pwd" "password" "ok"
+source "$TESTS/core/setup.sh"
+source "$TESTS/core/analytics.sh"
+source "$TESTS/core/macros.sh"
 
-expect "DELETE" "_1/sessions" "" "" "ok"
-expect "DELETE" "_1/sessions" "" "" "access denied"
-expect "DELETE" "_2/sessions" "pwd" "" "access denied"
-expect "DELETE" "_2/sessions" "password" "" "ok"
+test_start_time=$(date +%s%N)
 
-expect "GET" "/sessions" "" "" "access denied"
-expect "POST" "/sessions" "" "" "ok"
-expect "GET" "/sessions" "" "" "ok"
+for shard in $(ls "$TESTS/shards" | grep -E ".*\.sh$"); do
+  source "$TESTS/shards/${shard}" &
+done
 
-expect "POST" "/messages" "" "hi 1" "ok"
-expect "POST" "/messages" "" "hi 2" "ok"
-expect "POST" "/messages" "" "hi 3" "ok"
+wait
 
-expect "GET" "/messages" "" "" "[^\n]*\nhi 1"
-expect "GET" "/messages" "" "" "[^\n]*\nhi 1"
+test_end_time=$(date +%s%N)
+test_duration_ns=$((test_end_time - test_start_time))
+test_duration_ms=$((test_duration_ns / 1000000))
 
-key=$(curl -s "${URL}/${SID}/messages" | head -n 1)
-
-expect "DELETE" "/messages/${key}" "" "" "ok"
-expect "DELETE" "/messages/${key}" "" "" "key mismatch"
-
-expect "GET" "/messages" "" "" "[^\n]*\nhi 2"
-
-expect "POST" "/proxies" "" "hi 1" "ok"
-expect "POST" "/proxies" "" "hi 2" "ok"
-expect "POST" "/proxies" "" "hi 3" "ok"
-
-expect "GET" "/proxies" "" "" "[^\n]*\nhi 1"
-expect "GET" "/proxies" "" "" "[^\n]*\nhi 1"
-
-key=$(curl -s "${URL}/${SID}/proxies" | head -n 1)
-
-expect "DELETE" "/proxies/${key}" "" "" "ok"
-expect "DELETE" "/proxies/${key}" "" "" "key mismatch"
-
-expect "GET" "/proxies" "" "" "[^\n]*\nhi 2"
-
-expect "POST" "/logs" "" "log 1" "ok"
-expect "GET" "/logs" "" "" "log 1"
-
-expect "POST" "/logs" "" "log 2" "ok"
-expect "GET" "/logs" "" "" "log 1\nlog 2"
-
-expect "DELETE" "/sessions" "" "" "ok"
+printf "Total time: ${test_duration_ms} ms\n\n"
 
