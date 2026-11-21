@@ -4,9 +4,10 @@ source "$TESTS/core/setup.sh"
 source "$TESTS/core/analytics.sh"
 source "$TESTS/core/macros.sh"
 
+shards=$(ls "$TESTS/shards" | grep ".*\.sh$")
 test_start_time=$(date +%s%N)
 
-for shard in $(ls "$TESTS/shards" | grep -E ".*\.sh$"); do
+for shard in $shards; do
   source "$TESTS/shards/${shard}" &
 done
 

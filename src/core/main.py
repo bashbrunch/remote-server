@@ -5,7 +5,7 @@ from src.routers.index import IndexRouter
 
 app = FastAPI(
   title="Brunch OTN Server",
-  version="1.2.0",
+  version="1.3.0",
   docs_url=None,
   redoc_url=None,
   openapi_url=None,
