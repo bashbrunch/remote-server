@@ -3,6 +3,11 @@ from src.utils import generate_key
 
 class Session:
   id: str = ""
+  labels = {
+    "messages",
+    "proxies",
+    "prompts",
+  }
 
   def __init__(self, session_id: str):
     self.id = session_id
@@ -39,14 +44,14 @@ class Session:
 
       yield data
 
-  def push(self, label: str, content: str):
+  def queue_push(self, label: str, content: str):
     msg_id = generate_key()
     Cache.set(f"{self.id}:{label}:{msg_id}", content)
     _buffer = Cache.get(f"{self.id}:{label}:buffer", "")
     _buffer += f"{msg_id}\n"
     Cache.set(f"{self.id}:{label}:buffer", _buffer)
 
-  def seek(self, label: str) -> str | None:
+  def queue_seek(self, label: str) -> str | None:
     _buffer = Cache.get(f"{self.id}:{label}:buffer")
     splits = _buffer.split("\n", 1)
 
@@ -58,7 +63,7 @@ class Session:
 
     return f"{key}\n{message}"
 
-  def poll(self, label: str, key: str) -> tuple[bool, bool]:
+  def queue_poll(self, label: str, key: str) -> tuple[bool, bool]:
     _buffer = Cache.get(f"{self.id}:{label}:buffer")
 
     if not _buffer:
@@ -81,7 +86,7 @@ class Session:
 
     return True, True
 
-  def clear(self, label: str):
+  def _queue_clear(self, label: str):
     _buffer = Cache.get(f"{self.id}:{label}:buffer")
     keys = _buffer.split("\n") if _buffer else []
 
@@ -92,8 +97,6 @@ class Session:
     Cache.delete(f"{self.id}:{label}:buffer")
 
   def destroy(self):
-    self.clear("messages")
-    self.clear("proxies")
     idx = 0
 
     while Cache.get(f"{self.id}:{idx}"):
@@ -102,4 +105,7 @@ class Session:
 
     Cache.delete(f"{self.id}:idx")
     Cache.delete(f"{self.id}:key")
+
+    for label in self.labels:
+      self._queue_clear(label)
 

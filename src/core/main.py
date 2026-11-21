@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 
-from src.middlewares.cors import cors_middleware
+from src.intermediates.cors import cors_middleware
 from src.routers.index import IndexRouter
 
 app = FastAPI(
   title="Brunch OTN Server",
-  version="1.1.0",
+  version="1.2.0",
   docs_url=None,
   redoc_url=None,
   openapi_url=None,
