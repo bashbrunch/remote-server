@@ -24,19 +24,33 @@ The server manages multiple concurrent sessions. Each session is secured via an 
 All requests (except the home root) require an `Authorization` header to authenticate the session.
 
 ### Session Control
+
 - `POST /{session_id}/sessions`: Starts a new session or verifies an existing one.
 - `GET /{session_id}/sessions`: Checks if a session is active and authorized.
 - `DELETE /{session_id}/sessions`: Terminates the session.
 
 ### Log Management
+
 - `POST /{session_id}/logs`: Appends raw text to the session log.
 - `GET /{session_id}/logs`: Returns logs as a `StreamingResponse` in reverse chronological order (newest first).
 
+### Proxy Management
+- `POST /{session_id}/proxies`: Adds proxies to the session buffer.
+- `GET /{session_id}/proxies`: Retrieves the oldest proxy in the buffer.
+- `DELETE /{session_id}/proxies/{key}`: Removes a specific proxy using its key.
+
 ### Messaging System
+
 - `POST /{session_id}/messages`: Adds a message to the session buffer. The server generates a unique random key for this message.
 - `GET /{session_id}/messages`: Retrieves the oldest message in the buffer. Returns the format: `key
 content`.
 - `DELETE /{session_id}/messages/{key}`: Removes a specific message from the buffer if the key matches the oldest message.
+
+### Prompt Management
+
+- `POST /{session_id}/prompts`: Adds a prompt to the session buffer.
+- `GET /{session_id}/prompts`: Retrieves the oldest prompt in the buffer.
+- `DELETE /{session_id}/prompts/{key}`: Removes a specific prompt using its key.
 
 ## Setup
 
