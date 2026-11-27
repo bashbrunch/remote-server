@@ -16,6 +16,8 @@ class Cache:
 
     if isinstance(raw, bytes):
       data = raw.decode()
+    elif isinstance(raw, str):
+      data = raw
     else:
       data = str(raw)
 

@@ -38,3 +38,16 @@ expect() {
   printf "failed\n" >> "${tmp}/failed"
 }
 
+check() {
+  local idem=$1
+  local label=$2
+  local index=$3
+
+  if [[ -z "$index" ]]; then
+    index=1
+  fi
+
+  result=$(curl -s "${URL}/${SID}_${idem}/${label}")
+  printf "$result" | head -n $((index)) | tail -n 1
+}
+

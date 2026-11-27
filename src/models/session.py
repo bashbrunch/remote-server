@@ -4,6 +4,7 @@ from src.utils import generate_key
 class Session:
   id: str = ""
   labels = {
+    "logs",
     "messages",
     "proxies",
     "prompts",
@@ -23,33 +24,18 @@ class Session:
   async def auth_set(self, session_key: str):
     await Cache.set(f"{self.id}:key", session_key)
 
-  async def push_log(self, log: str):
-    chunk_idx = int(await Cache.get(f"{self.id}:idx", "0"))
-    chunk_data = await Cache.get(f"{self.id}:{chunk_idx}")
-    chunk_data += f"{log}\n"
-
-    if len(chunk_data) > 1024 * 1024:
-      chunk_idx += 1
-      chunk_data = f"{log}\n"
-
-    await Cache.set(f"{self.id}:idx", str(chunk_idx))
-    await Cache.set(f"{self.id}:{chunk_idx}", chunk_data)
-
-  async def stream_logs(self):
-    idx = int(await Cache.get(f"{self.id}:idx", "0"))
-
-    while idx >= 0:
-      data = await Cache.get(f"{self.id}:{idx}")
-      idx -= 1
-
-      yield data
-
   async def queue_push(self, label: str, content: str):
     msg_id = generate_key()
     await Cache.set(f"{self.id}:{label}:{msg_id}", content)
     _buffer = await Cache.get(f"{self.id}:{label}:buffer", "")
     _buffer += f"{msg_id}\n"
     await Cache.set(f"{self.id}:{label}:buffer", _buffer)
+
+  async def queue_read(self, label: str, key: str) -> str:
+    return await Cache.get(f"{self.id}:{label}:{key}")
+
+  async def queue_list(self, label: str) -> str:
+    return await Cache.get(f"{self.id}:{label}:buffer", "")
 
   async def queue_seek(self, label: str) -> str | None:
     _buffer = await Cache.get(f"{self.id}:{label}:buffer")
@@ -62,6 +48,14 @@ class Session:
     message = await Cache.get(f"{self.id}:{label}:{key}")
 
     return f"{key}\n{message}"
+
+  async def queue_stream(self, label: str):
+    _buffer = await Cache.get(f"{self.id}:{label}:buffer")
+    splits = _buffer.split("\n")
+
+    for key in splits:
+      if not key: continue
+      yield await Cache.get(f"{self.id}:{label}:{key}") + "\n"
 
   async def queue_poll(
     self,
