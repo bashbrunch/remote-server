@@ -6,5 +6,5 @@ def read(fname: str) -> str:
 
 class Config:
   REDIS_URL = getenv("REDIS_URL", "")
-  VERSION = read("VERSION")
+  VERSION = read("version")
 
